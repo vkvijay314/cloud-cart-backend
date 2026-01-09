@@ -21,7 +21,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://YOUR_FRONTEND.vercel.app"
+      "https://cloudcart-1.vercel.app"
     ],
     credentials: true
   })
