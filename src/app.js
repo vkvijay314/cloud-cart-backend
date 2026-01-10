@@ -17,13 +17,18 @@ import { errorHandler } from "./middlewares/error.middleware.js";
 const app = express();
 
 /* GLOBAL MIDDLEWARES */
+
 app.use(
   cors({
-    origin: true,        // 👈 VERY IMPORTANT
-    credentials: true    // 👈 REQUIRED for axios withCredentials
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:3000",
+      "https://cloud-cart-frontend2.vercel.app"
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
-
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
