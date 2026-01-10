@@ -21,28 +21,34 @@ app.set("trust proxy", 1)
 ================================ */
 
 // 🔥 FINAL CORS FIX (this unblocks POST)
+
+const allowedOrigins = [
+  "http://localhost:5173",       
+  "https://cloud-cart-frontend2.vercel.app/"
+];
+
 app.use(
   cors({
-    origin: "https://cloud-cart-frontend2.vercel.app",
+    origin: function (origin, callback) {
+      // allow server-to-server & postman
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("CORS not allowed"));
+      }
+    },
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: false,
-    optionsSuccessStatus: 200
+    allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
 
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
-
-  next();
-});
-
+// ✅ VERY IMPORTANT (preflight fix)
+app.use(corsConfigHere);
 app.options("*", cors());
+
 
 // Body parsers
 app.use(express.json());
