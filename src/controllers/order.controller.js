@@ -2,17 +2,19 @@ import Order from "../models/order.model.js";
 import Cart from "../models/cart.model.js";
 
 /* ==============================
-   PLACE ORDER
+   PLACE ORDER (COD + ONLINE)
 ============================== */
 export const placeOrder = async (req, res) => {
   try {
-    // 🔐 safety guard
+    // 🔐 auth guard
     if (!req.user || !req.user.id) {
       return res.status(401).json({
         success: false,
         message: "Unauthorized"
       });
     }
+
+    const { address, paymentMethod, paymentId } = req.body;
 
     const cart = await Cart.findOne({ user: req.user.id })
       .populate("items.product");
@@ -24,7 +26,7 @@ export const placeOrder = async (req, res) => {
       });
     }
 
-    // ✅ sanitize cart items
+    // ✅ sanitize items
     const items = cart.items
       .filter(item => item.product && item.quantity > 0)
       .map(item => ({
@@ -46,13 +48,18 @@ export const placeOrder = async (req, res) => {
       0
     );
 
+    // ✅ CREATE ORDER (FIXED)
     const order = await Order.create({
       user: req.user.id,
       items,
-      totalAmount
+      totalAmount,
+      address: address || {},
+      paymentMethod: paymentMethod || "COD",
+      paymentId: paymentId || null,
+      status: paymentMethod === "ONLINE" ? "PAID" : "PENDING"
     });
 
-    // ✅ clear cart after successful order
+    // ✅ clear cart
     cart.items = [];
     await cart.save();
 
