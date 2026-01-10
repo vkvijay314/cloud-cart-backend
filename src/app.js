@@ -30,6 +30,7 @@ app.use(
     optionsSuccessStatus: 200
   })
 );
+app.options("*", cors());
 
 // Body parsers
 app.use(express.json());
