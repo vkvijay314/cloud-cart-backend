@@ -55,9 +55,13 @@ export const addToCart = async (req, res) => {
       await cart.save();
     }
 
+    // 🔥 IMPORTANT: populate before sending
+    const populatedCart = await Cart.findOne({ user: req.user.id })
+      .populate("items.product");
+
     res.json({
       success: true,
-      cart
+      cart: populatedCart
     });
   } catch (error) {
     console.error("Add to cart error:", error);
@@ -66,7 +70,7 @@ export const addToCart = async (req, res) => {
 };
 
 /* ==============================
-   UPDATE QUANTITY (🔥 FIX)
+   UPDATE CART QUANTITY
 ============================== */
 export const updateCartQuantity = async (req, res) => {
   try {
@@ -99,9 +103,13 @@ export const updateCartQuantity = async (req, res) => {
     item.quantity = quantity;
     await cart.save();
 
+    // 🔥 populate before sending
+    const populatedCart = await Cart.findOne({ user: req.user.id })
+      .populate("items.product");
+
     res.json({
       success: true,
-      cart
+      cart: populatedCart
     });
   } catch (error) {
     console.error("Update quantity error:", error);
@@ -130,9 +138,13 @@ export const removeFromCart = async (req, res) => {
 
     await cart.save();
 
+    // 🔥 populate before sending
+    const populatedCart = await Cart.findOne({ user: req.user.id })
+      .populate("items.product");
+
     res.json({
       success: true,
-      cart
+      cart: populatedCart
     });
   } catch (error) {
     console.error("Remove cart error:", error);
