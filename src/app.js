@@ -17,14 +17,13 @@ import { errorHandler } from "./middlewares/error.middleware.js";
 const app = express();
 
 /* GLOBAL MIDDLEWARES */
-
 app.use(
   cors({
-    origin: "*",
-    allowedHeaders: ["Content-Type", "Authorization"],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    origin: true,        // 👈 VERY IMPORTANT
+    credentials: true    // 👈 REQUIRED for axios withCredentials
   })
 );
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
