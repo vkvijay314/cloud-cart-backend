@@ -20,33 +20,10 @@ app.set("trust proxy", 1)
    GLOBAL MIDDLEWARES
 ================================ */
 
-// 🔥 FINAL CORS FIX (this unblocks POST)
+// 🔓 allow all origins (temporary / debugging)
+app.use(cors());
 
-const allowedOrigins = [
-  "http://localhost:5173",       
-  "https://cloud-cart-frontend2.vercel.app/"
-];
-
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // allow server-to-server & postman
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("CORS not allowed"));
-      }
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
-  })
-);
-
-// ✅ VERY IMPORTANT (preflight fix)
-app.use(corsConfigHere);
+// 🔥 handle preflight for all routes
 app.options("*", cors());
 
 
