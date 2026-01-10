@@ -16,23 +16,28 @@ import { errorHandler } from "./middlewares/error.middleware.js";
 
 const app = express();
 
-/* GLOBAL MIDDLEWARES */
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  next();
-});
+/* ===============================
+   GLOBAL MIDDLEWARES
+================================ */
 
+// 🔥 FINAL CORS FIX (this unblocks POST)
 app.use(
   cors({
     origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    credentials: false,
+    optionsSuccessStatus: 200
   })
 );
+
+// Body parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-/* ROUTES */
+/* ===============================
+   ROUTES
+================================ */
 app.use("/api/health", healthRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/analytics", analyticsRoutes);
@@ -43,21 +48,10 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS"
-  );
-  next();
-});
 
-
-/* ERROR HANDLER (LAST) */
+/* ===============================
+   ERROR HANDLER (LAST)
+================================ */
 app.use(errorHandler);
 
 export default app;
