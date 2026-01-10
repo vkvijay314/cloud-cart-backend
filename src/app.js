@@ -17,6 +17,10 @@ import { errorHandler } from "./middlewares/error.middleware.js";
 const app = express();
 
 /* GLOBAL MIDDLEWARES */
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  next();
+});
 
 app.use(
   cors({
