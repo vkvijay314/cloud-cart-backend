@@ -19,13 +19,11 @@ const app = express();
 /* GLOBAL MIDDLEWARES */
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://cloudcart-1.vercel.app"
-    ],
-    credentials: true
+    origin: true,        // 👈 VERY IMPORTANT
+    credentials: true    // 👈 REQUIRED for axios withCredentials
   })
 );
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
