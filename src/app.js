@@ -23,7 +23,7 @@ app.set("trust proxy", 1)
 // 🔥 FINAL CORS FIX (this unblocks POST)
 app.use(
   cors({
-    origin: "*",
+    origin: "https://cloud-cart-frontend2.vercel.app",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: false,
