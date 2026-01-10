@@ -29,7 +29,7 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
-
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -44,6 +44,18 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);
+
+app.use((err, req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization"
+  );
+
+  res.status(err.status || 500).json({
+    message: err.message || "Internal Server Error"
+  });
+});
 
 /* ERROR HANDLER (LAST) */
 app.use(errorHandler);
