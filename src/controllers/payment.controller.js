@@ -13,12 +13,15 @@ const razorpay = new Razorpay({
 });
 
 /* ==============================
-   CREATE CHECKOUT ORDER
+   CREATE RAZORPAY ORDER
    (Amount calculated from cart)
 ============================== */
 export const createRazorpayOrder = async (req, res) => {
   try {
-    const cart = await Cart.findOne({ user: req.user.id })
+    // ✅ FIXED USER ID
+    const userId = req.user._id;
+
+    const cart = await Cart.findOne({ user: userId })
       .populate("items.product");
 
     if (!cart || cart.items.length === 0) {
@@ -28,7 +31,7 @@ export const createRazorpayOrder = async (req, res) => {
       });
     }
 
-    // 🔐 Secure amount calculation (server-side)
+    // 🔐 Secure amount calculation
     const amount = cart.items.reduce(
       (sum, item) => sum + item.product.price * item.quantity,
       0
@@ -40,15 +43,15 @@ export const createRazorpayOrder = async (req, res) => {
       receipt: `receipt_${Date.now()}`
     });
 
-    res.json({
+    return res.json({
       success: true,
-      orderId: order.id,
-      amount,
+      id: order.id,
+      amount: order.amount, // paise
       currency: "INR"
     });
   } catch (error) {
     console.error("RAZORPAY CREATE ORDER ERROR:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to create Razorpay order"
     });
@@ -60,12 +63,15 @@ export const createRazorpayOrder = async (req, res) => {
 ============================== */
 export const verifyRazorpayPayment = async (req, res) => {
   try {
+    const userId = req.user._id;
+
     const {
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature
     } = req.body;
 
+    // 🔐 Verify signature
     const sign = `${razorpay_order_id}|${razorpay_payment_id}`;
 
     const expectedSign = crypto
@@ -80,42 +86,51 @@ export const verifyRazorpayPayment = async (req, res) => {
       });
     }
 
-    // ✅ Fetch cart again
-    const cart = await Cart.findOne({ user: req.user.id })
+    // ✅ FETCH CART ONLY ONCE (NOW IT EXISTS)
+    const cart = await Cart.findOne({ user: userId })
       .populate("items.product");
 
     if (!cart || cart.items.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "Cart not found"
+        message: "Cart is empty"
       });
     }
 
-    const totalAmount = cart.items.reduce(
-      (sum, item) => sum + item.product.price * item.quantity,
+    const items = cart.items.map(item => ({
+      product: item.product._id,
+      name: item.product.name,
+      price: item.product.price,
+      quantity: item.quantity
+    }));
+
+    const totalAmount = items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
       0
     );
 
-    // ✅ Save order
-    await Order.create({
-      user: req.user.id,
-      items: cart.items,
+    // ✅ CREATE ORDER AFTER PAYMENT
+    const order = await Order.create({
+      user: userId,
+      items,
       totalAmount,
+      paymentMethod: "ONLINE",
       paymentId: razorpay_payment_id,
       status: "paid"
     });
 
-    // ✅ Clear cart
+    // ✅ CLEAR CART AFTER ORDER
     cart.items = [];
     await cart.save();
 
-    res.json({
+    return res.json({
       success: true,
-      message: "Payment verified & order placed"
+      message: "Payment verified & order placed",
+      order
     });
   } catch (error) {
     console.error("RAZORPAY VERIFY ERROR:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Payment verification error"
     });
