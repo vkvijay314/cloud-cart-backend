@@ -16,36 +16,23 @@ import { errorHandler } from "./middlewares/error.middleware.js";
 
 const app = express();
 
-app.use((req, res, next) => {
-  res.setHeader(
-    "Access-Control-Allow-Origin",
-    "https://cloud-cart-frontend1.vercel.app"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET,POST,PUT,DELETE,OPTIONS"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization"
-  );
-  res.setHeader("Access-Control-Allow-Credentials", "true");
+/* ===============================
+   ✅ SINGLE CORS CONFIG (ONLY THIS)
+================================ */
+app.use(
+  cors({
+    origin: [
+      "https://cloud-cart-frontend1.vercel.app",
+      "http://localhost:5173"
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    optionsSuccessStatus: 204
+  })
+);
 
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(204);
-  }
-
-  next();
-});
-
-/* optional but fine */
-app.use(cors({
-  origin: "https://cloud-cart-frontend1.vercel.app",
-  credentials: true
-}));
-
-
-// Body parsers
+/* Body parsers */
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
