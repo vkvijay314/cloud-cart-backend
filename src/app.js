@@ -15,17 +15,21 @@ import userRoutes from "./routes/user.routes.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 
 const app = express();
-app.set("trust proxy", 1)
-/* ===============================
-   GLOBAL MIDDLEWARES
-================================ */
 
-// 🔓 allow all origins (temporary / debugging)
-app.use(cors());
+/* 1️⃣ CORS FIRST */
+app.use(cors({
+  origin: "https://cloud-cart-frontend1.vercel.app",
+  credentials: true
+}));
 
-// 🔥 handle preflight for all routes
+/* 2️⃣ PREFLIGHT */
 app.options("*", cors());
 
+/* 3️⃣ BODY PARSER */
+app.use(express.json());
+
+/* 4️⃣ ROUTES */
+app.use("/api/auth", authRoutes);
 
 // Body parsers
 app.use(express.json());
