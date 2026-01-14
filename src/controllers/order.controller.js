@@ -1,8 +1,12 @@
 import Order from "../models/order.model.js";
 import Cart from "../models/cart.model.js";
 
+/* ==============================
+   PLACE ORDER (FIXED)
+============================== */
 export const placeOrder = async (req, res) => {
   try {
+    // 🔐 safety guard
     if (!req.user || !req.user._id) {
       return res.status(401).json({
         success: false,
@@ -10,27 +14,53 @@ export const placeOrder = async (req, res) => {
       });
     }
 
-    const { items, address, paymentMethod, totalAmount } = req.body;
+    const userId = req.user._id;
 
-    if (!items || items.length === 0) {
+    const { address, paymentMethod } = req.body;
+
+    const cart = await Cart.findOne({ user: userId })
+      .populate("items.product");
+
+    if (!cart || !cart.items || cart.items.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "No order items"
+        message: "Cart is empty"
       });
     }
 
+    // ✅ sanitize cart items
+    const items = cart.items
+      .filter(item => item.product && item.quantity > 0)
+      .map(item => ({
+        product: item.product._id,
+        name: item.product.name,
+        price: item.product.price,
+        quantity: item.quantity
+      }));
+
+    if (items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid cart items"
+      });
+    }
+
+    const totalAmount = items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+
     const order = await Order.create({
-      user: req.user._id, // ✅ FIXED
+      user: userId,          // ✅ FIXED
       items,
-      address,
-      paymentMethod,
-      totalAmount
+      totalAmount,
+      address,               // ✅ ADDED
+      paymentMethod          // ✅ ADDED
     });
 
-    await Cart.findOneAndUpdate(
-      { user: req.user._id }, // ✅ FIXED
-      { items: [] }
-    );
+    // ✅ clear cart after successful order
+    cart.items = [];
+    await cart.save();
 
     return res.status(201).json({
       success: true,
@@ -46,13 +76,47 @@ export const placeOrder = async (req, res) => {
   }
 };
 
+/* ==============================
+   GET USER ORDERS (FIXED)
+============================== */
 export const getMyOrders = async (req, res) => {
   try {
     const orders = await Order.find({ user: req.user._id }) // ✅ FIXED
       .sort({ createdAt: -1 });
 
-    res.json({ success: true, orders });
-  } catch {
-    res.status(500).json({ success: false });
+    res.json({
+      success: true,
+      count: orders.length,
+      orders
+    });
+  } catch (error) {
+    console.error("GET MY ORDERS ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch orders"
+    });
+  }
+};
+
+/* ==============================
+   ADMIN: GET ALL ORDERS
+============================== */
+export const getAllOrders = async (req, res) => {
+  try {
+    const orders = await Order.find()
+      .populate("user", "name email")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: orders.length,
+      orders
+    });
+  } catch (error) {
+    console.error("GET ALL ORDERS ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch all orders"
+    });
   }
 };
