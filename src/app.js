@@ -22,7 +22,7 @@ const app = express();
 app.use(
   cors({
     origin: [
-      "https://cloud-cart-frontend1.vercel.app",
+      "https://cloud-cart-vijay.vercel.app/",
       "http://localhost:5173"
     ],
     credentials: true,
