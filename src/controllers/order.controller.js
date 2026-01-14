@@ -1,13 +1,9 @@
 import Order from "../models/order.model.js";
 import Cart from "../models/cart.model.js";
 
-/* ==============================
-   PLACE ORDER (FIXED)
-============================== */
 export const placeOrder = async (req, res) => {
   try {
-    // 🔐 auth check
-    if (!req.user || !req.user.id) {
+    if (!req.user || !req.user._id) {
       return res.status(401).json({
         success: false,
         message: "Unauthorized"
@@ -16,7 +12,6 @@ export const placeOrder = async (req, res) => {
 
     const { items, address, paymentMethod, totalAmount } = req.body;
 
-    // ✅ validations
     if (!items || items.length === 0) {
       return res.status(400).json({
         success: false,
@@ -24,25 +19,16 @@ export const placeOrder = async (req, res) => {
       });
     }
 
-    if (!totalAmount || totalAmount <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid total amount"
-      });
-    }
-
-    // ✅ create order
     const order = await Order.create({
-      user: req.user.id,
+      user: req.user._id, // ✅ FIXED
       items,
       address,
       paymentMethod,
       totalAmount
     });
 
-    // ✅ clear cart after order
     await Cart.findOneAndUpdate(
-      { user: req.user.id },
+      { user: req.user._id }, // ✅ FIXED
       { items: [] }
     );
 
@@ -60,43 +46,13 @@ export const placeOrder = async (req, res) => {
   }
 };
 
-/* ==============================
-   GET USER ORDERS
-============================== */
 export const getMyOrders = async (req, res) => {
   try {
-    const orders = await Order.find({ user: req.user.id })
+    const orders = await Order.find({ user: req.user._id }) // ✅ FIXED
       .sort({ createdAt: -1 });
 
-    res.json({
-      success: true,
-      orders
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch orders"
-    });
-  }
-};
-
-/* ==============================
-   ADMIN: GET ALL ORDERS
-============================== */
-export const getAllOrders = async (req, res) => {
-  try {
-    const orders = await Order.find()
-      .populate("user", "name email")
-      .sort({ createdAt: -1 });
-
-    res.json({
-      success: true,
-      orders
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch all orders"
-    });
+    res.json({ success: true, orders });
+  } catch {
+    res.status(500).json({ success: false });
   }
 };
