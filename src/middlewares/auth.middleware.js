@@ -16,9 +16,9 @@ export const protect = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, env.JWT_SECRET);
 
-    // ✅ normalize user object (VERY IMPORTANT)
+    // ✅ STANDARDIZE USER OBJECT
     req.user = {
-      id: decoded.id,
+      _id: decoded.id,     // 🔥 THIS FIXES EVERYTHING
       role: decoded.role
     };
 
