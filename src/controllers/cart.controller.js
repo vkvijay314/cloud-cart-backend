@@ -6,7 +6,7 @@ import Product from "../models/product.model.js";
 ============================== */
 export const getCart = async (req, res) => {
   try {
-    const cart = await Cart.findOne({ user: req.user.id })
+    const cart = await Cart.findOne({ user: req.user._id })
       .populate("items.product");
 
     res.json({
@@ -20,11 +20,18 @@ export const getCart = async (req, res) => {
 };
 
 /* ==============================
-   ADD TO CART
+   ADD TO CART (FIXED)
 ============================== */
 export const addToCart = async (req, res) => {
   try {
     const { productId, quantity } = req.body;
+
+    if (!productId || quantity < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid product or quantity"
+      });
+    }
 
     const product = await Product.findById(productId);
     if (!product) {
@@ -34,11 +41,11 @@ export const addToCart = async (req, res) => {
       });
     }
 
-    let cart = await Cart.findOne({ user: req.user.id });
+    let cart = await Cart.findOne({ user: req.user._id });
 
     if (!cart) {
       cart = await Cart.create({
-        user: req.user.id,
+        user: req.user._id,
         items: [{ product: productId, quantity }]
       });
     } else {
@@ -55,8 +62,7 @@ export const addToCart = async (req, res) => {
       await cart.save();
     }
 
-    // 🔥 IMPORTANT: populate before sending
-    const populatedCart = await Cart.findOne({ user: req.user.id })
+    const populatedCart = await Cart.findOne({ user: req.user._id })
       .populate("items.product");
 
     res.json({
@@ -82,7 +88,7 @@ export const updateCartQuantity = async (req, res) => {
       });
     }
 
-    const cart = await Cart.findOne({ user: req.user.id });
+    const cart = await Cart.findOne({ user: req.user._id });
 
     if (!cart) {
       return res.status(404).json({
@@ -103,8 +109,7 @@ export const updateCartQuantity = async (req, res) => {
     item.quantity = quantity;
     await cart.save();
 
-    // 🔥 populate before sending
-    const populatedCart = await Cart.findOne({ user: req.user.id })
+    const populatedCart = await Cart.findOne({ user: req.user._id })
       .populate("items.product");
 
     res.json({
@@ -124,7 +129,7 @@ export const removeFromCart = async (req, res) => {
   try {
     const { productId } = req.body;
 
-    const cart = await Cart.findOne({ user: req.user.id });
+    const cart = await Cart.findOne({ user: req.user._id });
 
     if (!cart) {
       return res.status(404).json({
@@ -138,8 +143,7 @@ export const removeFromCart = async (req, res) => {
 
     await cart.save();
 
-    // 🔥 populate before sending
-    const populatedCart = await Cart.findOne({ user: req.user.id })
+    const populatedCart = await Cart.findOne({ user: req.user._id })
       .populate("items.product");
 
     res.json({
