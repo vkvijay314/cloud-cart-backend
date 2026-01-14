@@ -2,11 +2,11 @@ import Order from "../models/order.model.js";
 import Cart from "../models/cart.model.js";
 
 /* ==============================
-   PLACE ORDER (COD + ONLINE)
+   PLACE ORDER (FIXED)
 ============================== */
 export const placeOrder = async (req, res) => {
   try {
-    // 🔐 auth guard
+    // 🔐 auth check
     if (!req.user || !req.user.id) {
       return res.status(401).json({
         success: false,
@@ -14,63 +14,46 @@ export const placeOrder = async (req, res) => {
       });
     }
 
-    const { address, paymentMethod, paymentId } = req.body;
+    const { items, address, paymentMethod, totalAmount } = req.body;
 
-    const cart = await Cart.findOne({ user: req.user.id })
-      .populate("items.product");
-
-    if (!cart || !cart.items || cart.items.length === 0) {
+    // ✅ validations
+    if (!items || items.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "Cart is empty"
+        message: "No order items"
       });
     }
 
-    // ✅ sanitize items
-    const items = cart.items
-      .filter(item => item.product && item.quantity > 0)
-      .map(item => ({
-        product: item.product._id,
-        name: item.product.name,
-        price: item.product.price,
-        quantity: item.quantity
-      }));
-
-    if (items.length === 0) {
+    if (!totalAmount || totalAmount <= 0) {
       return res.status(400).json({
         success: false,
-        message: "Invalid cart items"
+        message: "Invalid total amount"
       });
     }
 
-    const totalAmount = items.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    );
-
-    // ✅ CREATE ORDER (FIXED)
+    // ✅ create order
     const order = await Order.create({
       user: req.user.id,
       items,
-      totalAmount,
-      address: address || {},
-      paymentMethod: paymentMethod || "COD",
-      paymentId: paymentId || null,
-      status: paymentMethod === "ONLINE" ? "PAID" : "PENDING"
+      address,
+      paymentMethod,
+      totalAmount
     });
 
-    // ✅ clear cart
-    cart.items = [];
-    await cart.save();
+    // ✅ clear cart after order
+    await Cart.findOneAndUpdate(
+      { user: req.user.id },
+      { items: [] }
+    );
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Order placed successfully",
       order
     });
   } catch (error) {
     console.error("PLACE ORDER ERROR:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to place order"
     });
@@ -87,11 +70,9 @@ export const getMyOrders = async (req, res) => {
 
     res.json({
       success: true,
-      count: orders.length,
       orders
     });
   } catch (error) {
-    console.error("GET MY ORDERS ERROR:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch orders"
@@ -110,11 +91,9 @@ export const getAllOrders = async (req, res) => {
 
     res.json({
       success: true,
-      count: orders.length,
       orders
     });
   } catch (error) {
-    console.error("GET ALL ORDERS ERROR:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch all orders"
