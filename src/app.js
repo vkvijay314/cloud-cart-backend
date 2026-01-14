@@ -19,7 +19,9 @@ const app = express();
 /* 1️⃣ CORS FIRST */
 app.use(cors({
   origin: "https://cloud-cart-frontend1.vercel.app",
-  credentials: true
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 /* 2️⃣ PREFLIGHT */
